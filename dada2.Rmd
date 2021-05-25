@@ -4,6 +4,9 @@ author: "Katherine Mueller"
 date: "5/25/2021"
 output: html_document
 ---
+```{r setup}
+knitr::opts_knit$set(root.dir = "C:/Users/katmu/Dropbox/Valdivia Lab/Projects/ASV-phylogroup replication")
+```
 
 #Load Libraries
 ```{r}
@@ -17,5 +20,89 @@ library(stringr)
 library(magrittr)
 library(ggplot2)
 library(tidyr)
+```
+
+#Setup
+Set up paths, directories, and shell variables
+```{r}
+#Directories
+data.dir = "Data/Original"
+demux.dir = "Data/Original/IBD"
+output.dir = "Data/scratch"
+
+#Files
+map.file = file.path(data.dir, "IBD_map.txt")
+silva.ref = file.path(data.dir, "silva_nr99_v138.1_wSpecies_train_set.fa.gz")
+ps.rds = file.path(output.dir, "IBDMDB.rds")
+
+#Bash variables
+Sys.setenv(MAP_FILE = map.file)
+Sys.setenv(OUT_DIR = output.dir)
+Sys.setenv(DEMUX_DIR = demux.dir)
+#Sys.setenv(R1_FASTQ = r1.fastq)
+#Sys.setenv(R2_FASTQ = r2.fastq)
+```
+
+#Filter and Trim
+Get lists of forward and reverse reads
+```{r}
+fnFs <- sort(list.files(demux.dir, pattern = "_1.fastq", full.names = TRUE))
+fnRs <- sort(list.files(demux.dir, pattern = "_2.fastq", full.names = TRUE))
+
+forward_fastq_suffix = "_1.fastq.gz"
+
+fnFs %>%
+  basename %>%
+  str_replace(forward_fastq_suffix,"") ->
+  sample.names
+```
+
+```{r}
+print(fnFs)
+```
+
+```{r}
+print(fnRs)
+```
+
+```{r}
+print(sample.names)
+```
+
+#Quality Profiles
+```{r}
+#plotQualityProfile(fnFs[1:2])
+```
+
+```{r}
+#plotQualityProfile(fnRs[1:2])
+```
+
+Assign filepaths for filtered files
+```{r}
+filt_path <- file.path(output.dir, "filtered")
+filtFs <- file.path(filt_path, paste0(sample.names, "_F_filt.fastq.gz"))
+filtRs <- file.path(filt_path, paste0(sample.names, "_R_filt.fastq.gz"))
+```
+
+Filter reads
+```{r}
+filt.out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, trimLeft = 10, truncLen = c(140,140),
+                          maxN = 0, maxEE = c(2,2), truncQ = 2, rm.phix = TRUE,
+                          compress = TRUE, multithread = FALSE)
+```
+
+```{r}
+head(filt.out)
+```
+
+#Learn Error Rates
+```{r}
+errF <- learnErrors(filtFs, multithread = TRUE)
+errR <- learnErrors(filtRs, multithread = TRUE)
+```
+
+```{r}
+plotErrors(errF, nominalQ = TRUE)
 ```
 
