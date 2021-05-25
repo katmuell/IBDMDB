@@ -1,0 +1,21 @@
+---
+title: "DADA2"
+author: "Katherine Mueller"
+date: "5/25/2021"
+output: html_document
+---
+
+#Load Libraries
+```{r}
+library(readr)
+library(fs)
+library(dplyr)
+library(tibble)
+library(Biostrings)
+library(dada2)
+library(stringr)
+library(magrittr)
+library(ggplot2)
+library(tidyr)
+```
+
