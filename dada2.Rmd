@@ -75,6 +75,7 @@ plotQualityProfile(fnFs[1:2])
 plotQualityProfile(fnRs[1:2])
 ```
 
+#Filter Reads
 Assign filepaths for filtered files
 ```{r}
 filt_path <- file.path(output.dir, "filtered")
@@ -103,3 +104,137 @@ errR <- learnErrors(filtRs, multithread = TRUE)
 plotErrors(errF, nominalQ = TRUE)
 ```
 
+#Dereplication
+```{r}
+derepFs <- derepFastq(filtFs, verbose = TRUE)
+derepRs <- derepFastq(filtRs, verbose = TRUE)
+names(derepFs) <- sample.names
+names(derepRs) <- sample.names
+```
+
+#Sample Inference
+```{r}
+dadaFs <- dada(derepFs, err=errF, multithread = TRUE)
+dadaRs <- dada(derepRs, err=errR, multithread = TRUE)
+```
+
+```{r}
+dadaFs[[2]]
+```
+
+#Merge Paired Reads
+```{r}
+mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose = TRUE)
+```
+
+```{r}
+head(mergers[[2]])
+```
+
+#Further Processing
+Construct sequence table
+```{r}
+seqtab <- makeSequenceTable(mergers)
+dim(seqtab)
+```
+
+```{r}
+table(nchar(getSequences(seqtab)))
+```
+
+```{r}
+seqtab2 <- seqtab[, nchar(colnames(seqtab)) %in% seq(230,236)]
+```
+
+Remove chimeras
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab2, method = "consensus", multithread = TRUE, verbose = TRUE)
+dim(seqtab.nochim)
+```
+
+```{r}
+sum(seqtab.nochim)/sum(seqtab2)
+```
+
+Track reads through the pipeline
+```{r}
+getN <- function(x) sum(getUniques(x))
+filt.out %>%
+  as_tibble(rownames = "filename") %>%
+  mutate(sample = str_replace(filename, forward_fastq_suffix, "")) %>%
+  select(sample, input = reads.in, filtered = reads.out) ->
+  track
+
+sapply (dadaFs, getN) %>%
+  enframe(name = "sample", value = "denoised") ->
+  denoised
+track %<>% full_join(denoised, by = c("sample"))
+
+sapply(mergers, getN) %>%
+  enframe(name = "sample", value = "merged") ->
+  merged
+track %<>% full_join(merged, by = c("sample"))
+
+rowSums(seqtab2) %>%
+  enframe(name = "sample", value = "tabled") ->
+  tabled
+track %<>% full_join(tabled, by = c("sample"))
+
+rowSums(seqtab.nochim) %>%
+  enframe(name = "sample", value = "nonchim") ->
+  nonchim
+track %<>% full_join(nonchim, by = c("sample"))
+
+track
+```
+
+```{r}
+track %>%
+  gather(key = "stage", value = "counts", -c("sample")) %>%
+  replace_na(list(counts = 0)) %>%
+  mutate(stage=factor(stage, levels = c('input', 'filtered', 'denoised', 'merged', 'tabled', 'nonchim'))) %>%
+  ggplot(mapping = aes(x = stage, y = counts, by = sample, group = sample)) + geom_line(alpha = 0.05) + theme_classic()
+```
+
+#Assign Taxonomy
+```{r}
+taxa <- assignTaxonomy(seqtab.nochim, silva.ref, multithread = TRUE)
+taxa.print <- taxa.print
+rownames(taxa.print) <- NULLhead(taxa.print)
+```
+
+#Make Phyloseq Object
+Load Metadata
+```{r}
+metadata.df = read_tsv(map.file) %>%
+  dplyr::rename(Sample = "#SampleID") %>%
+  column_to_rownames("Sample") %>%
+  as.data.frame()
+
+metadata.df      
+```
+
+Construct phyloseq object
+```{r}
+otus = otu_table(seqtab.nochim, taxa_are_rows = FALSE)
+sd = sample_data(metadata.df)
+ps <- phyloseq(otus, sd, tax_table(taxa))
+
+ps
+```
+
+Save phyloseq object as RDS
+```{r}
+write_rds(ps, ps.rds)
+```
+
+Confirm that the RDS is usable
+```{r}
+loaded.ps = read_rds(ps.rds)
+print(loaded.ps)
+```
+
+#Session Info
+```{r}
+sessionInfo()
+```
