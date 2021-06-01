@@ -36,8 +36,6 @@ ps.rds = file.path(output.dir, "IBDMDB.rds")
 Sys.setenv(MAP_FILE = map.file)
 Sys.setenv(OUT_DIR = output.dir)
 Sys.setenv(DEMUX_DIR = demux.dir)
-#Sys.setenv(R1_FASTQ = r1.fastq)
-#Sys.setenv(R2_FASTQ = r2.fastq)
 ```
 
 #Filter and Trim
@@ -87,7 +85,7 @@ Filter reads
 ```{r}
 filt.out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, trimLeft = 10, truncLen = c(230,160),
                           maxN = 0, maxEE = c(2,2), truncQ = 2, rm.phix = TRUE,
-                          compress = TRUE, multithread = FALSE)
+                          compress = TRUE, multithread = TRUE)
 ```
 
 ```{r}
@@ -199,8 +197,9 @@ track %>%
 #Assign Taxonomy
 ```{r}
 taxa <- assignTaxonomy(seqtab.nochim, silva.ref, multithread = TRUE)
-taxa.print <- taxa.print
-rownames(taxa.print) <- NULLhead(taxa.print)
+taxa.print <- taxa
+rownames(taxa.print) <- NULL
+head(taxa.print)
 ```
 
 #Make Phyloseq Object
