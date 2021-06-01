@@ -1,0 +1,14 @@
+---
+title: "Akkermansia ASVs"
+author: "Katherine Mueller"
+date: "6/1/2021"
+output: html_document
+---
+
+#Load Libraries
+```{r}
+library(phyloseq)
+library(readr)
+library(dplyr)
+```
+
