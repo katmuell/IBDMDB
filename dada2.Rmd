@@ -17,6 +17,7 @@ library(stringr)
 library(magrittr)
 library(ggplot2)
 library(tidyr)
+library(phyloseq)
 ```
 
 #Setup
