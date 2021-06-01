@@ -27,3 +27,34 @@ print(ibd.ps)
 ```{r}
 sample_variables(ibd.ps)
 ```
+
+#Relative Abundance
+```{r}
+ibd.rel.ps <- ibd.ps %>%
+  transform_sample_counts(function(x) x/sum(x))
+```
+
+#Akkermansia ASVs
+```{r}
+akks.ps <- ibd.rel.ps %>%
+  subset_taxa(Genus == "Akkermansia")
+print(akks.ps)
+```
+Filter for Akk ASVs at a mean abundance of at least 0.01%
+```{r}
+mean_cutoff = 0.0001
+mean_test = function(x) {
+  mean(x) >= mean_cutoff
+}
+
+akks.0001mean.ps <- akks.ps %>%
+  filter_taxa(mean_test, prune = TRUE)
+print(akks.0001mean.ps)
+```
+
+```{r}
+akks0001 <- akks.0001mean.ps %>%
+  otu_table() %>%
+  as.data.frame()
+colnames(akks0001)
+```
