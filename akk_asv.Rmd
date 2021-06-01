@@ -12,3 +12,18 @@ library(readr)
 library(dplyr)
 ```
 
+#Define Paths
+```{r}
+ibd.rds <- "../../Data/Analysis/IBDMDB.rds"
+out.dir <- "../../Data/Analysis"
+```
+
+Load and Check Phyloseq Object
+```{r}
+ibd.ps = read_rds(ibd.rds)
+print(ibd.ps)
+```
+
+```{r}
+sample_variables(ibd.ps)
+```
