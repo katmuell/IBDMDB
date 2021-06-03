@@ -10,6 +10,8 @@ output: html_document
 library(phyloseq)
 library(readr)
 library(dplyr)
+library(tidyr)
+library(ggplot2)
 ```
 
 #Define Paths
@@ -34,7 +36,7 @@ ibd.rel.ps <- ibd.ps %>%
   transform_sample_counts(function(x) x/sum(x))
 ```
 
-#Akkermansia ASVs
+#Akkermansia ASV Identification
 ```{r}
 akks.ps <- ibd.rel.ps %>%
   subset_taxa(Genus == "Akkermansia")
@@ -58,3 +60,24 @@ akks0001 <- akks.0001mean.ps %>%
   as.data.frame()
 colnames(akks0001)
 ```
+
+Double check that none of the other ASVs should be included
+```{r}
+#Get dataframe for akk ASV abundances
+all_akks <- akks.ps %>%
+  otu_table() %>%
+  as.data.frame()
+
+#Make the dataframe long for plotting
+akks.long <- all_akks %>%
+  gather(ASV, Abundance)
+
+#Plot Akk ASV abundances
+akks.boxplot <- akks.long %>%
+  ggplot(aes(x = ASV, y = Abundance)) +
+  geom_point() +
+  geom_jitter()
+akks.boxplot
+```
+
+It looks like taking more than the initial three wouldn't contribute to anything. Taking the sequences of the three and comparing to known sequences reveals that ASV1 is an AmI, ASV2 is an AmII, and ASV3 is an AmIV.
