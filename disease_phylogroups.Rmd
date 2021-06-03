@@ -1,0 +1,128 @@
+---
+title: "IBD and Akkermansia Phylogroups"
+author: "Katherine Mueller"
+date: "6/3/2021"
+output: html_document
+---
+
+#Load Libraries
+```{r}
+library(phyloseq)
+library(cowplot)
+library(car)
+```
+
+#Define Paths
+```{r}
+phylogroups.rds = "../../Data/Analysis/IBD_wPhylogroups.rds"
+out.dir = "../../Data/Analysis"
+```
+
+#Load and Check Phyloseq Object
+```{r}
+phylogroups.ps = read_rds(phylogroups.rds)
+print(phylogroups.ps)
+```
+
+```{r}
+sample_variables(phylogroups.ps)
+```
+
+#Analysis
+Determine which host disease states were recorded
+```{r}
+unique(sample_data(phylogroups.ps)$Host_disease)
+```
+
+```{r}
+sample_data <- sample_data(phylogroups.ps) %>%
+  as.matrix() %>%
+  as.data.frame()
+sample_data$Akk_abund <- as.numeric(sample_data$Akk_abund)
+sample_data$AmI_abund <- as.numeric(sample_data$AmI_abund)
+sample_data$AmII_abund <- as.numeric(sample_data$AmII_abund)
+sample_data$AmIV_abund <- as.numeric(sample_data$AmIV_abund)
+```
+
+```{r}
+#Is ANOVA appropriate?
+akk_aov <- aov(Akk_abund ~ Host_disease,
+               data = sample_data)
+
+AmI_aov <- aov(AmI_abund ~ Host_disease,
+               data = sample_data)
+
+AmII_aov <- aov(AmII_abund ~ Host_disease,
+               data = sample_data)
+
+AmIV_aov <- aov(AmIV_abund ~ Host_disease,
+               data = sample_data)
+
+hist(akk_aov$residuals)
+hist(AmI_aov$residuals)
+hist(AmII_aov$residuals)
+hist(AmIV_aov$residuals)
+```
+
+```{r}
+qqPlot(akk_aov$residuals, id = FALSE)
+qqPlot(AmI_aov$residuals, id = FALSE)
+qqPlot(AmII_aov$residuals, id = FALSE)
+qqPlot(AmIV_aov$residuals, id = FALSE)
+```
+
+Normality assumptions not met for ANOVA
+```{r}
+kruskal.test(Akk_abund ~ Host_disease, data = sample_data)
+
+kruskal.test(AmI_abund ~ Host_disease, data = sample_data)
+
+kruskal.test(AmII_abund ~ Host_disease, data = sample_data)
+
+kruskal.test(AmIV_abund ~ Host_disease, data = sample_data)
+```
+Post-hoc pairwise comparisons
+```{r}
+pairwise.wilcox.test(sample_data$Akk_abund, sample_data$Host_disease,
+                     p.adjust.method = "BH")
+
+pairwise.wilcox.test(sample_data$AmI_abund, sample_data$Host_disease,
+                     p.adjust.method = "BH")
+
+pairwise.wilcox.test(sample_data$AmII_abund, sample_data$Host_disease,
+                     p.adjust.method = "BH")
+
+pairwise.wilcox.test(sample_data$AmIV_abund, sample_data$Host_disease,
+                     p.adjust.method = "BH")
+```
+
+#Plots
+```{r}
+#overall akks
+akks.disease.plot <-
+  ggplot(sample_data, aes(x = Host_disease, y = Akk_abund)) +
+  geom_boxplot()
+
+#AmI
+AmI.disease.plot <-
+  ggplot(sample_data, aes(x = Host_disease, y = AmI_abund)) +
+  geom_boxplot()
+#AmII
+AmII.disease.plot <-
+  ggplot(sample_data, aes(x = Host_disease, y = AmII_abund)) +
+  geom_boxplot()
+
+#AmIV
+AmIV.disease.plot <-
+  ggplot(sample_data, aes(x = Host_disease, y = AmIV_abund)) +
+  geom_boxplot()
+```
+
+```{r}
+plot_grid(akks.disease.plot, AmI.disease.plot, AmII.disease.plot, AmIV.disease.plot, labels = c("All Akks", "AmI", "AmII", "AmIV"))
+```
+
+I'm not a fan of how the graphs are turning out, so I'll export the dataframe for transformation and graphing in Prism
+```{r}
+write.csv(sample_data, file.path(out.dir, "IBD_phylogroup_dataframe.csv"))
+```
