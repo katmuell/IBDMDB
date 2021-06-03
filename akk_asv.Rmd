@@ -81,3 +81,47 @@ akks.boxplot
 ```
 
 It looks like taking more than the initial three wouldn't contribute to anything. Taking the sequences of the three and comparing to known sequences reveals that ASV1 is an AmI, ASV2 is an AmII, and ASV3 is an AmIV.
+
+#Breakdown of Phylogroup Abundances
+```{r}
+#Rename ASV sequences for ease of reading
+colnames(akks0001)[1] <- "ASV1"
+colnames(akks0001)[2] <- "ASV2"
+colnames(akks0001)[3] <- "ASV3"
+colnames(akks0001)
+```
+
+```{r}
+#Determine presence/absence of each phylogroup
+akks <- akks0001 %>%
+  mutate(Akk_abundance = rowSums(.),
+         has_AmI = ifelse(ASV1 >= 0.0001, "AmI_Positive", "AmI_Negative"),
+         has_AmII = ifelse(ASV2 >= 0.0001, "AmII_Positive", "AmII_Negative"),
+         has_AmIV = ifelse(ASV3 >= 0.0001, "AmIV_Positive", "AmIV_Negative"),
+         has_Akk = ifelse(Akk_abundance > 0.0001, "Akk_Positive", "Akk_Negative"))
+
+#Assign new variables
+sample_data(ibd.rel.ps)$AmI_abund <- akks$ASV1
+sample_data(ibd.rel.ps)$AmI_presence <- akks$has_AmI
+sample_data(ibd.rel.ps)$AmII_abund <- akks$ASV2
+sample_data(ibd.rel.ps)$AmII_presence <- akks$has_AmII
+sample_data(ibd.rel.ps)$AmIV_abund <- akks$ASV3
+sample_data(ibd.rel.ps)$AmIV_presence <- akks$has_AmIV
+sample_data(ibd.rel.ps)$Akk_abund <- akks$Akk_abundance
+sample_data(ibd.rel.ps)$Akk_presence <- akks$has_Akk
+```
+
+```{r}
+sample_variables(ibd.rel.ps)
+```
+
+Output the updated phyloseq object for later use
+```{r}
+saveRDS(ibd.rel.ps, file.path(out.dir, 'IBD_wPhylogroups.rds'))
+```
+
+#Session Info
+```{r}
+sessionInfo()
+```
+
