@@ -10,6 +10,8 @@ output: html_document
 library(phyloseq)
 library(cowplot)
 library(car)
+library(readr)
+library(dplyr)
 ```
 
 #Define Paths
