@@ -63,7 +63,7 @@ cols <- c("AmI" = "aquamarine3", "AmII" = "mediumpurple3", "AmIV" = "steelblue2"
 
 ```{r}
 #Plot with filled circles
-tiff("ibd_bubble.tiff", units="in", width=8.75, height=8.25, res=300)
+tiff(file.path(out.dir,"ibd_bubble.tiff"), units="in", width=11.75, height=8.25, res=300)
 ggplot(b8, aes(x = Source, y = as.factor(Subject_ID), col=Clade)) +
   geom_point(aes(size = RelPer), alpha=0.5, shape = 19) +
   scale_size(breaks = c(0.01, 0.1, 1, 10, 20),range = c(2,20)) +
