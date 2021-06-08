@@ -1,0 +1,76 @@
+---
+title: "Bubble Graphs"
+author: "Katherine Mueller"
+date: "6/8/2021"
+output: html_document
+---
+
+#Load Libraries
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(phyloseq)
+library(tidyr)
+library(cowplot)
+```
+
+#Define Paths
+```{r}
+phylogroups.rds = "../../Data/Analysis/IBD_wPhylogroups.rds"
+out.dir = "../../Data/Analysis"
+```
+
+#Load and Check Phyloseq Object
+```{r}
+phylogroups.ps = read_rds(phylogroups.rds)
+print(phylogroups.ps)
+```
+
+```{r}
+sample_variables(phylogroups.ps)
+```
+
+#Generate Proper Dataframe
+```{r}
+#Pull metedata from the phyloseq object
+meta <- sample_data(phylogroups.ps)
+
+#Combine the separate phylogroup abundance and presence columns into one each
+b8 <- data.frame(AmI = meta$AmI_abund, AmII = meta$AmII_abund, AmIV = meta$AmIV_abund, Subject_ID = meta$host_subject_id, Disease = meta$Host_disease, Source = meta$Isolation_source) %>%
+  gather(Clade, Relative_Akkermansia_Abundance, AmI:AmIV)
+
+b8$RelPer <- 100*b8$Relative_Akkermansia_Abundance
+b8$Source[b8$Source == "Descending (left-sided) colon"] <- "Descending colon"
+
+#Apply abundance filter
+b8 <- b8 %>% filter(RelPer > 0.01)
+```
+
+#Generate Bubble Graph
+Set ggplot theme
+```{r}
+my.theme = theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                 panel.background = element_blank(), axis.line = element_line(colour = "black"), plot.title=element_text(size=25), 
+                 axis.title.x=element_text(size=12, face = "bold"), axis.title.y=element_text(size=12, face = "bold"), legend.text=element_text(size=12),
+                 axis.text.x=element_text(size=12), axis.text.y=element_text(size=12), 
+                 legend.title=element_text(size=12, face="bold"), legend.key=element_blank())
+
+#Set colour scheme
+#Use scale colour manual to use these custom colors
+cols <- c("AmI" = "aquamarine3", "AmII" = "mediumpurple3", "AmIV" = "steelblue2", "Unknown" = "grey25")
+```
+
+```{r}
+#Plot with filled circles
+tiff("ibd_bubble.tiff", units="in", width=8.75, height=8.25, res=300)
+ggplot(b8, aes(x = Source, y = as.factor(Subject_ID), col=Clade)) +
+  geom_point(aes(size = RelPer), alpha=0.5, shape = 19) +
+  scale_size(breaks = c(0.01, 0.1, 1, 10, 20),range = c(2,20)) +
+  my.theme + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~Disease, scales = "free") +
+  xlab("Isolation Source") + ylab("Subject ID") +
+  labs(size = "Akkermansia 16S rRNA Abundance (%)", col = "Phylogroup Compositon") +
+  scale_colour_manual(values = cols)
+dev.off()
+```
