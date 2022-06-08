@@ -27,9 +27,9 @@ for filename in listing:
 		data_to_summarize = pd.read_csv(filename, delimiter = "\t")
 		pd.set_option('mode.use_inf_as_na', True)
 		with np.errstate(divide='ignore'):	#log10 in the next step will probably return errors for diving by zero. But we deal with that after, so I'm turning the error message off for this one calculation.
-			data_to_summarize["log10FUKM"] = np.log10(data_to_summarize["FUKM"]).dropna(how="any")		#Calculate log10FUKM and drop the ones that couldn't be calculates becuase the FUKM was zero. This is what the strainR graphs do as well.
+			data_to_summarize["log10FUKM"] = np.log10(data_to_summarize["FUKM"]).dropna(how="any")		#Calculate log10FUKM and drop the ones that couldn't be calculated because the FUKM was zero. This is what the strainR graphs do as well.
 		medians = data_to_summarize[["StrainID", "log10FUKM"]].groupby("StrainID").median().reset_index()	#Calculate median log10FUKM of each phylogroup
-		SampleID_pattern = "SRR\d+"
+		SampleID_pattern = "\S*\/(.*?)\.abundances"
 		SampleID = re.search(SampleID_pattern, filename).group()
 
 		#If strain appears in the strainR results file, grab the median FUKM value. Otherwise, assign abundance as zero. Do in order of strains 1-7 to keep the output consistent.
