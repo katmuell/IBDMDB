@@ -1,0 +1,29 @@
+#!/bin/bash
+#SBATCH --job-name strainR-array
+#SBATCH --output=slurms/strainR_%a.out
+#SBATCH --error=slurms/strainR_%a.err
+#SBATCH --mem=64G
+#SBATCH --partition=scavenger
+#SBATCH --mail-type=FAIL
+#SBATCH --mail-type=END
+#SBATCH --mail-use=user_email
+#SBATCH --array=####-####
+
+module load R/4.0.3-rhel8
+module load BBMap/38.63
+module load Jellyfish/2.3.0
+module load samtools/1.11-rhel8
+module load Git-LFS/2.9.2
+cd forward_reads
+mkdir strainR_results
+
+SAMPLE="SRR####${SLURM_ARRAY_TASK_ID}"
+FORWARD="forward_reads/$SAMPLE.fastq.gz"
+
+Rscript /work/user/StrainR/StrainR.R \
+--forward ${FORWARD} \
+--reference /work/user/AmDB-apr2021 \
+--threads 2 \
+--mem 64 \
+--outdir strainR_results \
+--outprefix ${SAMPLE}
